@@ -20,6 +20,7 @@ To call this script in Conky, use the following (assuming that you save this scr
     
 Changelog:
   v1.0 -- Original release (2015-08-22)
+  v1.1 -- Added precision rounding to values (2015-12-29)
 ]]
 
 boxes = {
@@ -179,6 +180,33 @@ boxes = {
 			},
 		}
 	},
+
+	{
+		title='Climate',
+		values={
+			{
+				title='Outside',
+				value='${execi 360 curl --silent http://192.168.77.40:8080/rest/items/Outdoor_Temperature/state}',
+				suffix=' F',
+				max=100,
+				precision=0
+			},
+			{
+				title='Living Room',
+				value='${execi 360 curl --silent http://192.168.77.40:8080/rest/items/Temp_Living/state}',
+				suffix=' F',
+				max=100,
+				precision=0
+			},
+			{
+				title='Bedroom',
+				value='${execi 360 curl --silent http://192.168.77.40:8080/rest/items/Temp_Bedroom/state}',
+				suffix=' F',
+				max=100,
+				precision=0
+			},
+		}
+	},
 }
 
 require 'cairo'
@@ -193,6 +221,11 @@ function table_length(T)
 	local count = 0
 	for _ in pairs(T) do count = count + 1 end
 	return count
+end
+
+function round(num, idp)
+	local mult = 10^(idp or 0)
+	return math.floor(num * mult + 0.5) / mult
 end
 
 function conky_main()
@@ -318,6 +351,11 @@ function draw_value(cr, x, y, height, width, value)
 	local value_int = conky_parse(value.value)
 	local value_max = conky_parse(value.max)
 	local value_perc = (tonumber(value_int) ~= nil and value_int or 0) / value_max
+	
+	if value.precision ~= nil then
+		value_int = round(value_int, value.precision)
+	end
+	
 	local value_text = value_int .. value.suffix
 	
 	
