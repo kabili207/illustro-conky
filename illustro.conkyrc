@@ -54,7 +54,7 @@ net_avg_samples 2
 default_color FFFFFF
 
 # Lua Load  #
-lua_load /home/kabili/.conky/illustro.lua
+lua_load /home/kabili/.conky/illustro/illustro.lua
 lua_draw_hook_pre main
 
 TEXT

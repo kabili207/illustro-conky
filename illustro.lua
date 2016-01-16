@@ -21,6 +21,7 @@ To call this script in Conky, use the following (assuming that you save this scr
 Changelog:
   v1.0 -- Original release (2015-08-22)
   v1.1 -- Added precision rounding to values (2015-12-29)
+  v1.2 -- Added interval to reduce load (2016-01-16)
 ]]
 
 boxes = {
@@ -56,19 +57,22 @@ boxes = {
 				title='root',
 				value='${fs_used_perc /}',
 				suffix='%',
-				max=100
+				max=100,
+				interval=10
 			},
 			{
 				title='home',
 				value='${fs_used_perc /home}',
 				suffix='%',
-				max=100
+				max=100,
+				interval=10
 			},
 			{
 				title='media',
 				value='${fs_used_perc /mnt/media}',
 				suffix='%',
-				max=100
+				max=100,
+				interval=10
 			},
 		}
 	},
@@ -108,27 +112,31 @@ boxes = {
 			},
 			{
 				title='GPU Temp',
-				value='${execi 10 nvidia-smi -a | grep "GPU Current Temp" | awk \'{print \$5}\' }',
+				value='${exec nvidia-smi -a | grep "GPU Current Temp" | awk \'{print \$5}\' }',
 				suffix=' C',
-				max=90
+				max=90,
+				interval=10
 			},
 			{
 				title='HDD - Linux',
-				value='${execi 10 udisks --show-info /dev/sda | grep temperature-celsius-2 | cut -c 52-53}',
+				value='${exec udisks --show-info /dev/sda | grep temperature-celsius-2 | cut -c 52-53}',
 				suffix=' C',
-				max=60
+				max=60,
+				interval=10
 			},
 			{
 				title='HDD - Windows',
-				value='${execi 10 udisks --show-info /dev/sdb | grep temperature-celsius-2 | cut -c 52-53}',
+				value='${exec udisks --show-info /dev/sdb | grep temperature-celsius-2 | cut -c 52-53}',
 				suffix=' C',
-				max=60
+				max=60,
+				interval=10
 			},
 			{
 				title='HDD - Games',
-				value='${execi 10 udisks --show-info /dev/sdc | grep temperature-celsius-2 | cut -c 52-53}',
+				value='${exec udisks --show-info /dev/sdc | grep temperature-celsius-2 | cut -c 52-53}',
 				suffix=' C',
-				max=60
+				max=60,
+				interval=10
 			},
 		}
 	},
@@ -156,9 +164,10 @@ boxes = {
 			},
 			{
 				title='GPU Fan',
-				value='${execi 2 nvidia-smi -a | grep Fan | awk \'{print \$4}\' }',
+				value='${exec nvidia-smi -a | grep Fan | awk \'{print \$4}\' }',
 				suffix='%',
-				max=100
+				max=100,
+				interval=5
 			},
 		}
 	},
@@ -168,15 +177,17 @@ boxes = {
 		values={
 			{
 				title='Last Sync',
-				value='${execi 90 /home/kabili/bin/lastsync.pl}',
+				value='${exec /home/kabili/bin/lastsync.pl}',
 				suffix='',
-				max=100
+				max=100,
+				interval=90
 			},
 			{
 				title='Progress',
-				value='${execi 30 /home/kabili/bin/emerge-progress.sh}',
+				value='${exec /home/kabili/bin/emerge-progress.sh}',
 				suffix='%',
-				max=100
+				max=100,
+				interval=30
 			},
 		}
 	},
@@ -186,24 +197,27 @@ boxes = {
 		values={
 			{
 				title='Outside',
-				value='${execi 360 curl --silent http://192.168.77.40:8080/rest/items/Outdoor_Temperature/state}',
+				value='${exec curl --silent http://192.168.77.40:8080/rest/items/Outdoor_Temperature/state}',
 				suffix=' F',
 				max=100,
-				precision=0
+				precision=0,
+				interval=360
 			},
 			{
 				title='Living Room',
-				value='${execi 360 curl --silent http://192.168.77.40:8080/rest/items/Temp_Living/state}',
+				value='${exec curl --silent http://192.168.77.40:8080/rest/items/Temp_Living/state}',
 				suffix=' F',
 				max=100,
-				precision=0
+				precision=0,
+				interval=360
 			},
 			{
 				title='Bedroom',
-				value='${execi 360 curl --silent http://192.168.77.40:8080/rest/items/Temp_Bedroom/state}',
+				value='${exec curl --silent http://192.168.77.40:8080/rest/items/Temp_Bedroom/state}',
 				suffix=' F',
 				max=100,
-				precision=0
+				precision=0,
+				interval=360
 			},
 		}
 	},
@@ -212,6 +226,8 @@ boxes = {
 require 'cairo'
 require 'math'
 require 'string'
+
+local value_cache = {}
 
 function rgb_to_r_g_b(colour, alpha)
 	return ((colour / 0x10000) % 0x100) / 255., ((colour / 0x100) % 0x100) / 255., (colour % 0x100) / 255., alpha
@@ -330,9 +346,13 @@ function draw_illustro_box(cr, title, x, y, values)
 	local value_w = width - box_padding * 2
 	local value_h = 20
 	
+	if value_cache[title] == nil then
+		value_cache[title] = {}
+	end
+	
 	for i in pairs(values) do
 		local value = values[i]
-		draw_value(cr, value_x, value_y, value_h, value_w, value)
+		draw_value(cr, value_x, value_y, value_h, value_w, value, value_cache[title])
 		value_y = value_y + value_h
 	end
 	
@@ -342,18 +362,37 @@ function draw_illustro_box(cr, title, x, y, values)
 
 end
 
-function draw_value(cr, x, y, height, width, value)
+function draw_value(cr, x, y, height, width, value, cache)
 
 	--local title_x, title_y
 	local line_offset = 12
+	local title = value.title
 
-	local text = value.title
-	local value_int = conky_parse(value.value)
-	local value_max = conky_parse(value.max)
-	local value_perc = (tonumber(value_int) ~= nil and value_int or 0) / value_max
+	local cached_values = cache[title]
 	
-	if value.precision ~= nil then
-		value_int = round(value_int, value.precision)
+	local value_int
+	local value_max
+	local value_perc
+	
+	local updates = tonumber(conky_parse("${updates}"))
+	local interval = value.interval or 1
+	
+	if (updates % interval) == 0 or cached_values == nil then
+	
+		value_int = conky_parse(value.value)
+		value_max = conky_parse(value.max)
+		value_perc = (tonumber(value_int) ~= nil and value_int or 0) / value_max
+		
+		if value.precision ~= nil then
+			value_int = round(value_int, value.precision)
+		end
+		
+		cache[title] = { int=value_int, max=value_max, perc=value_perc }
+	
+	else
+		value_int = cached_values.int
+		value_max = cached_values.max
+		value_perc = cached_values.perc
 	end
 	
 	local value_text = value_int .. value.suffix
@@ -371,7 +410,7 @@ function draw_value(cr, x, y, height, width, value)
 	
 	cairo_set_source_rgba (cr, 1, 1, 1, 205/255)
 	cairo_move_to (cr, x, text_top)
-	cairo_show_text (cr, text)
+	cairo_show_text (cr, title)
 	
 	cairo_text_extents (cr, value_text, extents)
 	
