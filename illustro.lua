@@ -68,7 +68,7 @@ function conky_main()
 	
 		for i in pairs(boxes) do
 			local box = boxes[i]
-			local box_height = draw_illustro_box(cr, box.title, 0, box_offset, box.values)
+			local box_height = draw_box(cr, box.title, 0, box_offset, box.values)
 			box_offset = box_height + box_offset
 		end
 	end
@@ -77,7 +77,7 @@ function conky_main()
 end
 
 
-function draw_illustro_box(cr, title, x, y, values)
+function draw_box(cr, title, x, y, values)
 
 	local width         = 200
 	local height        = 200
