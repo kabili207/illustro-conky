@@ -3,230 +3,27 @@ Illustro Conky by Andrew Nagle
 
 This script is a recreation of the Rainmeter Illustro widget theme
 
-IMPORTANT: if you are using the 'cpu' function, it will cause a segmentation
-fault if it tries to draw a value straight away. The if statement on line 145
-uses a delay to make sure that this doesn't happen. It calculates the length
-of the delay by the number of updates since Conky started. Generally, a value
-of 5s is long enough, so if you update Conky every 1s, use update_num>5 in
-that if statement (the default). If you only update Conky every 2s, you
-should change it to update_num>3; conversely if you update Conky every 0.5s,
-you should use update_num>10. ALSO, if you change your Conky, is it best to
-use "killall conky; conky" to update it, otherwise the update_num will not
-be reset and you will get an error.
-
 To call this script in Conky, use the following (assuming that you save this script to ~/scripts/illustro.lua):
     lua_load ~/scripts/illustro.lua
     lua_draw_hook_pre conky_main
+	update_interval 1
+	
+IMPORTANT: You must use an update_interval of 1. Individual values
+have their own "interval" property you can use to control updates.
     
 Changelog:
   v1.0 -- Original release (2015-08-22)
   v1.1 -- Added precision rounding to values (2015-12-29)
   v1.2 -- Added interval to reduce load (2016-01-16)
+  v1.3 -- Moved configuration to separate file
 ]]
 
-boxes = {
-
-	{
-		title='System',
-		values= {
-			{
-				title='CPU Usage',
-				value='${cpu cpu0}',
-				suffix='%',
-				max=100
-			},
-			{
-				title='RAM Usage',
-				value='${memperc}',
-				suffix='%',
-				max=100
-			},
-			{
-				title='Swap Usage',
-				value='${swapperc}',
-				suffix='%',
-				max=100
-			},
-		}
-	},
-
-	{
-		title='Disks',
-		values={
-			{
-				title='root',
-				value='${fs_used_perc /}',
-				suffix='%',
-				max=100,
-				interval=10
-			},
-			{
-				title='home',
-				value='${fs_used_perc /home}',
-				suffix='%',
-				max=100,
-				interval=10
-			},
-			{
-				title='media',
-				value='${fs_used_perc /mnt/media}',
-				suffix='%',
-				max=100,
-				interval=10
-			},
-		}
-	},
-
-	{
-		title='Network',
-		values={
-			{
-				title='Address',
-				value='${addr enp4s0}',
-				suffix='',
-				max=100
-			},
-			{
-				title='Down',
-				value='${downspeed enp4s0}',
-				suffix='',
-				max=100
-			},
-			{
-				title='Up',
-				value='${upspeed enp4s0}',
-				suffix='',
-				max=100
-			},
-		}
-	},
-
-	{
-		title='Temperatures',
-		values={
-			{
-				title='CPU Temp',
-				value='${hwmon 0 temp 3}',
-				suffix=' C', -- conky can't handle °
-				max=90
-			},
-			{
-				title='GPU Temp',
-				value='${exec nvidia-smi -a | grep "GPU Current Temp" | awk \'{print \$5}\' }',
-				suffix=' C',
-				max=90,
-				interval=10
-			},
-			{
-				title='HDD - Linux',
-				value='${exec udisks --show-info /dev/sda | grep temperature-celsius-2 | cut -c 52-53}',
-				suffix=' C',
-				max=60,
-				interval=10
-			},
-			{
-				title='HDD - Windows',
-				value='${exec udisks --show-info /dev/sdb | grep temperature-celsius-2 | cut -c 52-53}',
-				suffix=' C',
-				max=60,
-				interval=10
-			},
-			{
-				title='HDD - Games',
-				value='${exec udisks --show-info /dev/sdc | grep temperature-celsius-2 | cut -c 52-53}',
-				suffix=' C',
-				max=60,
-				interval=10
-			},
-		}
-	},
-
-	{
-		title='Fans',
-		values={
-			{
-				title='CPU Fan',
-				value='${platform it87.656 fan 1}',
-				suffix=' RPM',
-				max=3500
-			},
-			{
-				title='Front Fan',
-				value='${platform it87.656 fan 4}',
-				suffix=' RPM',
-				max=2800
-			},
-			{
-				title='Rear Fan',
-				value='${platform it87.656 fan 2}',
-				suffix=' RPM',
-				max=2000
-			},
-			{
-				title='GPU Fan',
-				value='${exec nvidia-smi -a | grep Fan | awk \'{print \$4}\' }',
-				suffix='%',
-				max=100,
-				interval=5
-			},
-		}
-	},
-
-	{
-		title='Portage',
-		values={
-			{
-				title='Last Sync',
-				value='${exec /home/kabili/bin/lastsync.pl}',
-				suffix='',
-				max=100,
-				interval=90
-			},
-			{
-				title='Progress',
-				value='${exec /home/kabili/bin/emerge-progress.sh}',
-				suffix='%',
-				max=100,
-				interval=30
-			},
-		}
-	},
-
-	{
-		title='Climate',
-		values={
-			{
-				title='Outside',
-				value='${exec curl --silent http://192.168.77.40:8080/rest/items/Outdoor_Temperature/state}',
-				suffix=' F',
-				max=100,
-				precision=0,
-				interval=360
-			},
-			{
-				title='Living Room',
-				value='${exec curl --silent http://192.168.77.40:8080/rest/items/Temp_Living/state}',
-				suffix=' F',
-				max=100,
-				precision=0,
-				interval=360
-			},
-			{
-				title='Bedroom',
-				value='${exec curl --silent http://192.168.77.40:8080/rest/items/Temp_Bedroom/state}',
-				suffix=' F',
-				max=100,
-				precision=0,
-				interval=360
-			},
-		}
-	},
-}
 
 require 'cairo'
 require 'math'
 require 'string'
 
+local boxes = nil
 local value_cache = {}
 
 function rgb_to_r_g_b(colour, alpha)
@@ -246,7 +43,6 @@ end
 
 function conky_main()
 	
-	-- Check that Conky has been running for at least 5s
 
 	if conky_window==nil then return end
 	local cs = cairo_xlib_surface_create(conky_window.display,
@@ -261,7 +57,15 @@ function conky_main()
 	
 	local box_offset = 0
 	
+	-- Check that Conky has been running for at least 5s
 	if update_num > 5 then
+	
+		if boxes == nil then
+			local folderOfThisFile = debug.getinfo(conky_main).source:sub(2):gsub('/[^/]+$', '')
+			package.path = package.path .. ";" ..folderOfThisFile .. "/?.lua"
+			boxes = require('config')
+		end
+	
 		for i in pairs(boxes) do
 			local box = boxes[i]
 			local box_height = draw_illustro_box(cr, box.title, 0, box_offset, box.values)
