@@ -166,6 +166,27 @@ function draw_box(cr, title, x, y, values)
 
 end
 
+function os.capture(cmd, raw)
+	local f = assert(io.popen(cmd, 'r'))
+	local s = assert(f:read('*a'))
+	f:close()
+	if raw then return s end
+	
+	s = string.gsub(s, '^%s+', '')
+	s = string.gsub(s, '%s+$', '')
+	s = string.gsub(s, '[\n\r]+', ' ')
+	
+	return s
+end
+
+function parse_value(value)
+	if value.v_type == nil or value.v_type == 'conky' then
+		return conky_parse(value.value)
+	elseif value.v_type == 'cmd' then
+		return os.capture(value.value, true)
+	end
+end
+
 function draw_value(cr, x, y, height, width, value, cache)
 
 	--local title_x, title_y
