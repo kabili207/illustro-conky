@@ -1,60 +1,64 @@
-# Conky settings #
-background yes
-update_interval 1
+conky.config = {
 
-cpu_avg_samples 2
-net_avg_samples 2
+  -- Conky settings
+  background = true,
+  update_interval = 1,
 
-override_utf8_locale yes
+  cpu_avg_samples = 2,
+  net_avg_samples = 2,
 
-double_buffer yes
-no_buffers yes
+  override_utf8_locale = true,
 
-text_buffer_size 2048
-#imlib_cache_size 0
+  double_buffer = true,
+  no_buffers = true, 
 
-
-# Window specifications #
-
-own_window yes
-own_window_type desktop
-own_window_transparent yes
-own_window_hints undecorate,sticky,skip_taskbar,skip_pager,below
-
-border_inner_margin 0
-border_outer_margin 0
-
-minimum_size 200 850
-maximum_width 200
+  text_buffer_size = 2048,
+  -- imlib_cache_size = 0,
 
 
-alignment tl
-gap_x 1685
-gap_y 30
+  -- Window specifications #
 
-# Graphics settings #
-draw_shades no
-draw_outline no
-draw_borders no
-draw_graph_borders no
+  own_window = true,
+  own_window_type = 'desktop',
+  own_window_transparent = true,
+  own_window_hints = 'sticky,skip_taskbar,skip_pager,below',
+  own_window_argb_visual = true,
 
-# Text settings #
-use_xft yes
-xftfont Tahoma MS:size=8
-xftalpha 0.5
-override_utf8_locale no
+  border_inner_margin = 0,
+  border_outer_margin = 0,
 
-uppercase no
+  minimum_height = 850,
+  minimum_width = 200,
 
-temperature_unit celsius
-cpu_avg_samples 2
-net_avg_samples 2
+  alignment = 'top_left',
+  gap_x = 1685,
+  gap_y = 5,
+
+  -- Graphics settings #
+  draw_shades = false,
+  draw_outline = false,
+  draw_borders = false,
+  draw_graph_borders = false,
+
+  -- Text settings #
+  use_xft = true,
+  xftfont = 'Tahoma MS:size=8',
+  xftalpha = 0.5,
+  override_utf8_locale = false,
+
+  uppercase = false,
+
+  temperature_unit = 'celsius',
+  cpu_avg_samples = 2,
+  net_avg_samples = 2,
 
 
-default_color FFFFFF
+  default_color = 'FFFFFF',
 
-# Lua Load  #
-lua_load /home/kabili/.conky/illustro/illustro.lua
-lua_draw_hook_pre main
+ -- Lua Load  #
+  lua_load = '/home/kabili/.conky/illustro/illustro.lua',
+  lua_draw_hook_pre = 'main'
 
-TEXT
+}
+
+conky.text = [[  ]]
