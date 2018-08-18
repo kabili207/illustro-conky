@@ -197,30 +197,45 @@ function draw_value(cr, x, y, height, width, value, cache)
 	
 	local value_int
 	local value_max
-	local value_perc
+	local value_perc = 0
+	local value_string
 	
 	local updates = tonumber(conky_parse("${updates}"))
 	local interval = value.interval or 1
 	
+	--	print(title, updates, updates % interval)
 	if (updates % interval) == 0 or cached_values == nil then
 	
-		value_int = conky_parse(value.value)
-		value_max = conky_parse(value.max)
-		value_perc = (tonumber(value_int) ~= nil and value_int or 0) / value_max
+		value_string = parse_value(value)
+		value_int = tonumber(value_string)
 		
-		if value.precision ~= nil then
-			value_int = round(value_int, value.precision)
+		if value_int ~= nil then
+			value_max = tonumber(conky_parse(value.max))
+			value_int = value_int ~= nil and value_int or 0
+			value_perc = value_int / value_max
+		
+			if value.precision ~= nil then
+				value_int = round(value_int, value.precision)
+			end
+			
+			if value_perc > 1 then
+				value_perc = 1
+			end
+			
+			value_string = tostring(value_int)
+		
 		end
 		
-		cache[title] = { int=value_int, max=value_max, perc=value_perc }
+		cache[title] = { string=value_string, int=value_int, max=value_max, perc=value_perc }
 	
 	else
 		value_int = cached_values.int
 		value_max = cached_values.max
 		value_perc = cached_values.perc
+		value_string = cached_values.string
 	end
 	
-	local value_text = value_int .. value.suffix
+	local value_text = value_string .. value.suffix
 	
 	
 	cairo_select_font_face (cr, "Trebuchet MS", CAIRO_FONT_SLANT_NORMAL,
