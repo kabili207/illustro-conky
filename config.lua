@@ -231,9 +231,36 @@ return {
 				interval=360
 			},
 			{
-				title='Bedroom',
+				title='Kitchen',
 				v_type='cmd',
-				value='curl --silent http://192.168.77.40:8080/rest/items/Temp_Bedroom/state',
+				value='curl --silent http://192.168.77.40:8080/rest/items/Temp_Kitchen/state',
+				suffix=' F',
+				max=100,
+				precision=0,
+				interval=360
+			},
+			{
+				title='Front Bed',
+				v_type='cmd',
+				value='curl --silent http://192.168.77.40:8080/rest/items/Temp_FrontBedroom/state',
+				suffix=' F',
+				max=100,
+				precision=0,
+				interval=360
+			},
+			{
+				title='Rear Bed',
+				v_type='cmd',
+				value='curl --silent http://192.168.77.40:8080/rest/items/Temp_RearBedroom/state',
+				suffix=' F',
+				max=100,
+				precision=0,
+				interval=360
+			},
+			{
+				title='Garage',
+				v_type='cmd',
+				value='curl --silent http://192.168.77.40:8080/rest/items/Temp_Garage/state',
 				suffix=' F',
 				max=100,
 				precision=0,
