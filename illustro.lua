@@ -1,5 +1,5 @@
 --[[
-Illustro Conky by Andrew Nagle
+Illustro Conky by Amy Nagle
 
 This script is a recreation of the Rainmeter Illustro widget theme
 
@@ -16,6 +16,7 @@ Changelog:
   v1.1 -- Added precision rounding to values (2015-12-29)
   v1.2 -- Added interval to reduce load (2016-01-16)
   v1.3 -- Moved configuration to separate file
+  v1.4 -- Support raw commands and cached values
 ]]
 
 
