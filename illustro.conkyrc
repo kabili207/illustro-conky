@@ -27,12 +27,12 @@ conky.config = {
   border_inner_margin = 0,
   border_outer_margin = 0,
 
-  minimum_height = 1050,
-  minimum_width = 200,
+  minimum_height = 768,
+  minimum_width = 1366,
 
   alignment = 'top_left',
-  gap_x = 1685,
-  gap_y = 5,
+  gap_x = 1878, ---683, -- 1880,
+  gap_y = -768,
 
   -- Graphics settings #
   draw_shades = false,
@@ -42,7 +42,7 @@ conky.config = {
 
   -- Text settings #
   use_xft = true,
-  xftfont = 'Tahoma MS:size=8',
+  --xftfont = 'Tahoma MS:size=8',
   xftalpha = 0.5,
   override_utf8_locale = false,
 
@@ -55,7 +55,7 @@ conky.config = {
 
   default_color = 'FFFFFF',
 
- -- Lua Load  #
+  -- Lua Load  #
   lua_load = '/home/kabili/.conky/illustro/illustro.lua',
   lua_draw_hook_pre = 'main'
 
